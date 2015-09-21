@@ -1,4 +1,5 @@
 import numpy as np
+import yaml
 
 def triangle_function(x1,x2,x3):
     return (x1**2 - x2**2 - x3**2)**2 - 4 * x1**2 * x2**2
@@ -48,3 +49,6 @@ def derive_features(df):
     # flight distance
     df['JOSH_FlightDistance_norm'] = df['FlightDistance'] / np.sqrt(df['FlightDistanceError'])
     df['JOSH_LifeTime_FlightDistance'] = df['JOSH_FlightDistance_norm'] * df['LifeTime']
+
+def derived_features():
+    return yaml.load(open('features.yml'))['features']

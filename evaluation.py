@@ -1,6 +1,10 @@
+from __future__ import division
+
 import numpy
+import pandas as pd
 from sklearn.metrics import roc_curve, auc
 
+from blue.pandas_utils import get_columns_in_df
 
 def __rolling_window(data, window_size):
     """
@@ -131,3 +135,39 @@ def roc_auc_truncated(labels, predictions, tpr_thresholds=(0.2, 0.4, 0.6, 0.8),
     # roc auc normalization to be 1 for an ideal classifier
     area /= numpy.sum((tpr_thresholds[1:] - tpr_thresholds[:-1]) * numpy.array(roc_weights))
     return area
+
+class ModelValidator(object):
+    """ Make sure models pass the correlation and agreement tests """
+    agreement_data = 'check_agreement.csv'
+    correlation_data = 'check_correlation.csv'
+
+    def __init__(self, data_folder='./data/', derived_features=[]):
+        self._check_agreement = pd.read_csv(data_folder + self.agreement_data, index_col='id')
+        self._check_correlation = pd.read_csv(data_folder + self.correlation_data, index_col='id')
+        self.derived_features = derived_features
+        
+    def _check_agreements(self, model, variables):
+        self.check_agreement = get_columns_in_df(self._check_agreement, variables+self.derived_features)
+        agreement_prob = model.predict_proba(self.check_agreement.values)[:,1]
+        ks = compute_ks(
+            agreement_prob[self._check_agreement['signal'].values == 0],
+            agreement_prob[self._check_agreement['signal'].values == 1],
+            self._check_agreement[self._check_agreement['signal'] == 0]['weight'].values,
+            self._check_agreement[self._check_agreement['signal'] == 1]['weight'].values)
+        print('KS metric', ks, ks < 0.09)
+        return ks < 0.09
+
+    def _check_correlations(self, model, variables):
+        self.check_correlation = get_columns_in_df(self._check_correlation, variables+self.derived_features)
+        correlation_probs = model.predict_proba(self.check_correlation.values)[:,1]
+        cvm = compute_cvm(correlation_probs, self._check_correlation['mass'])
+        print('CvM metric', cvm, cvm < 0.002)
+        return cvm < 0.002
+
+    def validate(self, model, variables):
+        return self._check_agreements(model, variables) and self._check_correlations(model, variables)
+
+def compute_AUC_on_valid(x, y, model, variables=None):
+    nn_mask = x['min_ANNmuon'] > 0.4
+    train_eval = x[samples_for_eval]
+    return roc_auc_truncated(y[samples_for_eval])
