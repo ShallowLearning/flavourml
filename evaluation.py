@@ -141,31 +141,32 @@ class ModelValidator(object):
     agreement_data = 'check_agreement.csv'
     correlation_data = 'check_correlation.csv'
 
-    def __init__(self, data_folder='./data/', derived_features=[]):
+    def __init__(self, flist, data_folder='./data/'):
         self._check_agreement = pd.read_csv(data_folder + self.agreement_data, index_col='id')
         self._check_correlation = pd.read_csv(data_folder + self.correlation_data, index_col='id')
-        self.derived_features = derived_features
+        self.flist = flist
         
-    def _check_agreements(self, model, variables):
-        self.check_agreement = get_columns_in_df(self._check_agreement, variables+self.derived_features)
+    def _check_agreements(self, model):
+        self.check_agreement = get_columns_in_df(self._check_agreement, self.flist.predictors)
         agreement_prob = model.predict_proba(self.check_agreement.values)[:,1]
         ks = compute_ks(
             agreement_prob[self._check_agreement['signal'].values == 0],
             agreement_prob[self._check_agreement['signal'].values == 1],
             self._check_agreement[self._check_agreement['signal'] == 0]['weight'].values,
             self._check_agreement[self._check_agreement['signal'] == 1]['weight'].values)
-        print('KS metric', ks, ks < 0.09)
-        return ks < 0.09
+        return ks 
 
-    def _check_correlations(self, model, variables):
-        self.check_correlation = get_columns_in_df(self._check_correlation, variables+self.derived_features)
+    def _check_correlations(self, model):
+        self.check_correlation = get_columns_in_df(self._check_correlation, self.flist.predictors)
         correlation_probs = model.predict_proba(self.check_correlation.values)[:,1]
         cvm = compute_cvm(correlation_probs, self._check_correlation['mass'])
-        print('CvM metric', cvm, cvm < 0.002)
-        return cvm < 0.002
-
-    def validate(self, model, variables):
-        return self._check_agreements(model, variables) and self._check_correlations(model, variables)
+        return cvm 
+        
+    def validate(self, model):
+        ks = self._check_agreements(model)
+        cvm = self._check_correlations(model)
+        return {'agreement':  {'value': ks, 'pass': ks < 0.09},
+                'correlation': {'value': cvm, 'pass': cvm < 0.002}}
 
 def compute_AUC_on_valid(x, y, model, variables=None):
     nn_mask = x['min_ANNmuon'] > 0.4

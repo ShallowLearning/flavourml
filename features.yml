@@ -1,4 +1,16 @@
-features:
+target:
+    - signal
+censored_features:
+    - signal
+    - IP
+    - IPSig
+    - SPDhits
+    - production
+    - min_ANNmuon
+    - id
+    - mass
+    - isolationc
+derived_features:
     - abs(p0_eta - p1_eta)
     - abs(p0_eta - p2_eta)
     - abs(p1_eta - p2_eta)
@@ -22,5 +34,29 @@ features:
     - p2_pt / pt
     - IP / sqrt(IPSig)
     - IP * dira
+    - FlightDistance / sqrt(FlightDistanceError)
+    - (FlightDistance / sqrt(FlightDistanceError)) * LifeTime
+derived_features_noIP:
+    - abs(p0_eta - p1_eta)
+    - abs(p0_eta - p2_eta)
+    - abs(p1_eta - p2_eta)
+    - p0_eta / p1_eta
+    - p0_eta / p2_eta
+    - p1_eta / p2_eta
+    - p0_pt * p1_pt
+    - p0_pt * p2_pt
+    - p1_pt * p2_pt
+    - abs(p0_pt - p1_pt) / (p0_pt + p1_pt)
+    - abs(p0_pt - p2_pt) / (p0_pt + p2_pt)
+    - abs(p1_pt - p2_pt) / (p1_pt + p2_pt)
+    - p0_pt * sinh(p0_eta)
+    - p1_pt * sinh(p1_eta)
+    - p2_pt * sinh(p2_eta)
+    - sqrt(2 * p0_pt * p1_pt * cosh(p0_eta - p1_eta))
+    - sqrt(2 * p0_pt * p2_pt * cosh(p0_eta - p2_eta))
+    - sqrt(2 * p1_pt * p2_pt * cosh(p1_eta - p2_eta))
+    - p0_pt / pt
+    - p1_pt / pt
+    - p2_pt / pt
     - FlightDistance / sqrt(FlightDistanceError)
     - (FlightDistance / sqrt(FlightDistanceError)) * LifeTime
